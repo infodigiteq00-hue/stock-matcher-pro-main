@@ -1,0 +1,17 @@
+{
+  "adminCredentials": {
+    "email": "digiteq00@gmail.com",
+    "password": "147852"
+  },
+  "controls": {
+    "allowPausedUsersAccess": false,
+    "userStatusOptions": [
+      "active",
+      "paused"
+    ],
+    "paymentStatusOptions": [
+      "paid",
+      "unpaid"
+    ]
+  }
+}
