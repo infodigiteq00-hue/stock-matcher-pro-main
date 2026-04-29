@@ -1,3 +1,5 @@
+import { toApiUrl } from "./apiBase";
+
 interface ApiErrorResponse {
   message?: string;
 }
@@ -18,7 +20,7 @@ interface AuthResponse {
   user: UserPayload;
 }
 
-const AUTH_API_BASE = "/api/auth";
+const AUTH_API_BASE = toApiUrl("/api/auth");
 
 const parseErrorMessage = async (response: Response) => {
   try {

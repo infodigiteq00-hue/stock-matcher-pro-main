@@ -1,3 +1,5 @@
+import { toApiUrl } from "./apiBase";
+
 interface AdminApiErrorResponse {
   message?: string;
 }
@@ -31,7 +33,7 @@ export interface AdminUsersResponse {
   controls: AdminControls;
 }
 
-const ADMIN_API_BASE = "/api/admin";
+const ADMIN_API_BASE = toApiUrl("/api/admin");
 
 const parseErrorMessage = async (response: Response) => {
   try {

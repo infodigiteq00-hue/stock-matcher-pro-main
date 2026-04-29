@@ -1,4 +1,5 @@
 import { BOQItem, LeftoverItem, MatchResult, StockItem, StockLedgerEntry } from '@/types/inventory';
+import { toApiUrl } from "./apiBase";
 
 export interface InventorySnapshot {
   stock: StockItem[];
@@ -9,7 +10,7 @@ export interface InventorySnapshot {
   stockLedger: Record<string, StockLedgerEntry[]>;
 }
 
-const INVENTORY_API_PATH = '/api/inventory';
+const INVENTORY_API_PATH = toApiUrl("/api/inventory");
 
 const getInventoryHeaders = (): HeadersInit => {
   const authRole = localStorage.getItem("authRole") || "";
