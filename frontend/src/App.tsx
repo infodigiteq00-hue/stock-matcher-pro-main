@@ -23,26 +23,6 @@ const getAuthState = () => {
   }
 };
 
-const LandingRoute = () => {
-  const { authRole, authUser } = getAuthState();
-
-  if (!authRole || !authUser) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (authRole === "admin") {
-    return <Navigate to="/admin" replace />;
-  }
-
-  if (authUser.status === "paused") {
-    localStorage.removeItem("authUser");
-    localStorage.removeItem("authRole");
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Navigate to="/dashboard" replace />;
-};
-
 const UserDashboardRoute = () => {
   const { authRole, authUser } = getAuthState();
 
@@ -83,7 +63,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<LandingRoute />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/dashboard" element={<UserDashboardRoute />} />
           <Route path="/admin" element={<AdminDashboardRoute />} />
           <Route path="/download" element={<Download />} />
