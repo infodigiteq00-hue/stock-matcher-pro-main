@@ -11,26 +11,28 @@ type InstallerOption = {
   fileLabel: string;
 };
 
+const normalizeUrl = (value?: string) => (value || "").trim();
+
 const installerOptions: InstallerOption[] = [
   {
     os: "Windows",
     icon: Monitor,
     description: "Recommended for Windows 10/11 (64-bit).",
-    href: "/downloads/Stock Matcher Pro Setup 0.0.0.exe",
+    href: normalizeUrl(import.meta.env.VITE_WINDOWS_INSTALLER_URL),
     fileLabel: "Stock Matcher Pro Setup (.exe)",
   },
   {
     os: "macOS",
     icon: Apple,
     description: "Installer for modern macOS devices.",
-    href: "/downloads/Stock Matcher Pro-0.0.0.dmg",
+    href: normalizeUrl(import.meta.env.VITE_MAC_INSTALLER_URL),
     fileLabel: "Stock Matcher Pro (.dmg)",
   },
   {
     os: "Linux",
     icon: HardDrive,
     description: "Use AppImage or DEB package based on your distro.",
-    href: "/downloads/Stock Matcher Pro-0.0.0.AppImage",
+    href: normalizeUrl(import.meta.env.VITE_LINUX_INSTALLER_URL),
     fileLabel: "Stock Matcher Pro (.AppImage)",
   },
 ];
@@ -61,12 +63,19 @@ const Download = () => (
               </CardHeader>
               <CardContent className="mt-auto space-y-3">
                 <p className="text-sm text-muted-foreground">{option.fileLabel}</p>
-                <Button asChild className="w-full">
-                  <a href={option.href} download>
+                {option.href ? (
+                  <Button asChild className="w-full">
+                    <a href={option.href} target="_blank" rel="noreferrer">
+                      <DownloadIcon className="mr-2 h-4 w-4" />
+                      Download Installer
+                    </a>
+                  </Button>
+                ) : (
+                  <Button className="w-full" disabled>
                     <DownloadIcon className="mr-2 h-4 w-4" />
-                    Download Installer
-                  </a>
-                </Button>
+                    Coming Soon
+                  </Button>
+                )}
               </CardContent>
             </Card>
           );
