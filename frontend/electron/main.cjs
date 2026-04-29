@@ -1,12 +1,45 @@
 const { app, BrowserWindow } = require("electron");
 const fs = require("node:fs");
+const net = require("node:net");
 const path = require("node:path");
 
-const API_PORT = Number(process.env.INVENTORY_API_PORT || 4000);
+const DEFAULT_API_PORT = Number(process.env.INVENTORY_API_PORT || 4000);
 const isDev = !app.isPackaged;
 
 let mainWindow;
 let serverModule;
+let apiPort = DEFAULT_API_PORT;
+
+const isPortAvailable = (port) =>
+  new Promise((resolve) => {
+    const probeServer = net.createServer();
+
+    probeServer.once("error", () => {
+      resolve(false);
+    });
+
+    probeServer.once("listening", () => {
+      probeServer.close(() => resolve(true));
+    });
+
+    probeServer.listen(port, "127.0.0.1");
+  });
+
+const resolveApiPort = async (preferredPort) => {
+  if (await isPortAvailable(preferredPort)) {
+    return preferredPort;
+  }
+
+  // Try nearby ports so packaged app can start even if 4000 is in use.
+  for (let offset = 1; offset <= 20; offset += 1) {
+    const candidatePort = preferredPort + offset;
+    if (await isPortAvailable(candidatePort)) {
+      return candidatePort;
+    }
+  }
+
+  throw new Error("No free API port found in the configured range.");
+};
 
 const ensureDataFiles = () => {
   const targetDataDir = path.join(app.getPath("userData"), "data");
@@ -39,7 +72,7 @@ const getBackendServerModule = () => {
     return require(path.resolve(__dirname, "..", "..", "backend", "src", "server.js"));
   }
 
-  return require(path.join(app.getAppPath(), "backend", "src", "server.js"));
+  return require(path.join(process.resourcesPath, "backend", "src", "server.js"));
 };
 
 const createWindow = () => {
@@ -66,16 +99,17 @@ const createWindow = () => {
     return;
   }
 
-  mainWindow.loadURL(`http://127.0.0.1:${API_PORT}`);
+  mainWindow.loadURL(`http://127.0.0.1:${apiPort}`);
 };
 
 const startApp = async () => {
   ensureDataFiles();
   process.env.ELECTRON_RENDERER_DIST = path.join(app.getAppPath(), "dist");
-  process.env.INVENTORY_API_PORT = String(API_PORT);
+  apiPort = await resolveApiPort(DEFAULT_API_PORT);
+  process.env.INVENTORY_API_PORT = String(apiPort);
 
   serverModule = getBackendServerModule();
-  serverModule.startServer(API_PORT);
+  await serverModule.startServer(apiPort);
   createWindow();
 };
 

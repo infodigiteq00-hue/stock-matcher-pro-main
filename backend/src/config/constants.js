@@ -32,6 +32,7 @@ const createDefaultStore = () => (
   },
 
   inventory: createEmptyInventorySnapshot(),
+  inventoryByUser: {},
   users: [],
 
 });

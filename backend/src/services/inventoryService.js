@@ -28,6 +28,27 @@ const normalizeUsers = (input) =>
   return input.filter((user) => typeof user === "object" && user !== null);
 };
 
+const normalizeInventoryByUser = (input) => {
+  if (!input || typeof input !== "object") {
+    return {};
+  }
+
+  return Object.entries(input).reduce((accumulator, [userId, snapshot]) => {
+    if (typeof userId === "string" && userId.trim()) {
+      accumulator[userId] = normalizeSnapshot(snapshot);
+    }
+    return accumulator;
+  }, {});
+};
+
+const hasSnapshotData = (snapshot) =>
+  Array.isArray(snapshot?.stock) && snapshot.stock.length > 0 ||
+  Array.isArray(snapshot?.leftovers) && snapshot.leftovers.length > 0 ||
+  Array.isArray(snapshot?.boqItems) && snapshot.boqItems.length > 0 ||
+  Array.isArray(snapshot?.matchResults) && snapshot.matchResults.length > 0 ||
+  Array.isArray(snapshot?.customShapes) && snapshot.customShapes.length > 0 ||
+  typeof snapshot?.stockLedger === "object" && snapshot.stockLedger !== null && Object.keys(snapshot.stockLedger).length > 0;
+
 const normalizeStore = (input) => 
 {
   const defaultStore = createDefaultStore();
@@ -47,6 +68,7 @@ const normalizeStore = (input) =>
             : defaultStore.status.updatedAt,
       },
       inventory: normalizeSnapshot(input.inventory),
+      inventoryByUser: normalizeInventoryByUser(input.inventoryByUser),
       users: normalizeUsers(input.users),
     };
   }
@@ -55,6 +77,7 @@ const normalizeStore = (input) =>
   return {
     status: defaultStore.status,
     inventory: normalizeSnapshot(input || createEmptyInventorySnapshot()),
+    inventoryByUser: normalizeInventoryByUser(input?.inventoryByUser),
     users: normalizeUsers(input?.users),
   };
 };
@@ -73,16 +96,50 @@ const saveStore = async (store) =>
   return normalized;
 };
 
-const getInventorySnapshot = async () => 
-{
-  const store = await getStore();
-  return store.inventory;
+const ensureUserInventorySnapshot = (store, userId) => {
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) {
+    throw new AppError("User id is required for inventory operations.", 400);
+  }
+
+  if (!store.inventoryByUser || typeof store.inventoryByUser !== "object") {
+    store.inventoryByUser = {};
+  }
+
+  if (!store.inventoryByUser[normalizedUserId]) {
+    const userList = Array.isArray(store.users) ? store.users : [];
+    const firstCreatedUserId = typeof userList[0]?.id === "string" ? userList[0].id : "";
+    const shouldMigrateLegacyData =
+      Object.keys(store.inventoryByUser).length === 0 &&
+      firstCreatedUserId === normalizedUserId &&
+      hasSnapshotData(store.inventory);
+
+    // Migrate old shared inventory only once to the oldest user account.
+    store.inventoryByUser[normalizedUserId] = shouldMigrateLegacyData
+      ? normalizeSnapshot(store.inventory)
+      : createEmptyInventorySnapshot();
+    return { snapshot: store.inventoryByUser[normalizedUserId], changed: true };
+  }
+
+  return { snapshot: store.inventoryByUser[normalizedUserId], changed: false };
 };
 
-const replaceInventorySnapshot = async (snapshot) => 
+const getInventorySnapshot = async (userId) => 
 {
   const store = await getStore();
-  store.inventory = normalizeSnapshot(snapshot);
+  const { snapshot, changed } = ensureUserInventorySnapshot(store, userId);
+  if (changed) {
+    await saveStore(store);
+  }
+  return snapshot;
+};
+
+const replaceInventorySnapshot = async (userId, snapshot) => 
+{
+  const store = await getStore();
+  const normalizedUserId = String(userId || "").trim();
+  ensureUserInventorySnapshot(store, normalizedUserId);
+  store.inventoryByUser[normalizedUserId] = normalizeSnapshot(snapshot);
   await saveStore(store);
 };
 
@@ -94,18 +151,19 @@ const validateCollection = (collection) =>
   }
 };
 
-const getCollectionItems = async (collection) => 
+const getCollectionItems = async (userId, collection) => 
 {
   validateCollection(collection);
-  const snapshot = await getInventorySnapshot();
+  const snapshot = await getInventorySnapshot(userId);
   return snapshot[collection];
 };
 
-const addCollectionItem = async (collection, payload) => 
+const addCollectionItem = async (userId, collection, payload) => 
 {
   validateCollection(collection);
   const store = await getStore();
-  const current = store.inventory[collection];
+  const { snapshot } = ensureUserInventorySnapshot(store, userId);
+  const current = snapshot[collection];
 
   if (!Array.isArray(current)) 
   {
@@ -136,11 +194,12 @@ const addCollectionItem = async (collection, payload) =>
   return payload;
 };
 
-const updateCollectionItem = async (collection, id, updates) => 
+const updateCollectionItem = async (userId, collection, id, updates) => 
 {
   validateCollection(collection);
   const store = await getStore();
-  const current = store.inventory[collection];
+  const { snapshot } = ensureUserInventorySnapshot(store, userId);
+  const current = snapshot[collection];
 
   if (!Array.isArray(current)) 
   {
@@ -173,11 +232,12 @@ const updateCollectionItem = async (collection, id, updates) =>
   return current[numericIndex];
 };
 
-const deleteCollectionItem = async (collection, id) => 
+const deleteCollectionItem = async (userId, collection, id) => 
 {
   validateCollection(collection);
   const store = await getStore();
-  const current = store.inventory[collection];
+  const { snapshot } = ensureUserInventorySnapshot(store, userId);
+  const current = snapshot[collection];
 
   if (!Array.isArray(current)) 
   {

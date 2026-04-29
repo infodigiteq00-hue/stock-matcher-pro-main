@@ -11,8 +11,30 @@ export interface InventorySnapshot {
 
 const INVENTORY_API_PATH = '/api/inventory';
 
+const getInventoryHeaders = (): HeadersInit => {
+  const authRole = localStorage.getItem("authRole") || "";
+  const authUserRaw = localStorage.getItem("authUser");
+  let userId = "";
+
+  if (authUserRaw) {
+    try {
+      const parsed = JSON.parse(authUserRaw) as { id?: string };
+      userId = typeof parsed?.id === "string" ? parsed.id : "";
+    } catch {
+      userId = "";
+    }
+  }
+
+  return {
+    "x-user-role": authRole,
+    "x-user-id": userId,
+  };
+};
+
 export async function loadInventorySnapshot(): Promise<InventorySnapshot> {
-  const response = await fetch(INVENTORY_API_PATH);
+  const response = await fetch(INVENTORY_API_PATH, {
+    headers: getInventoryHeaders(),
+  });
   if (!response.ok) {
     throw new Error(`Failed to load inventory: ${response.status}`);
   }
@@ -25,6 +47,7 @@ export async function saveInventorySnapshot(snapshot: InventorySnapshot): Promis
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...getInventoryHeaders(),
     },
     body: JSON.stringify(snapshot),
   });
