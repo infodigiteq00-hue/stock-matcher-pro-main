@@ -1,3 +1,4 @@
 frontend/release/
 frontend/dist/
 frontend/*.exe
+.env

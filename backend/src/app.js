@@ -7,9 +7,6 @@ const { errorHandler, notFoundHandler } = require("./middlewares/errorHandler");
 const app = express();
 
 const LOCALHOST_ORIGIN_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
-const PRESET_ALLOWED_ORIGINS = new Set([
-  "https://stock-matcher-pro-main.onrender.com",
-]);
 
 const getAllowedOrigins = () => {
   const rawOrigins = process.env.CORS_ORIGINS || "";
@@ -18,7 +15,7 @@ const getAllowedOrigins = () => {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  return new Set([...PRESET_ALLOWED_ORIGINS, ...envOrigins]);
+  return new Set(envOrigins);
 };
 
 app.use((req, res, next) => {

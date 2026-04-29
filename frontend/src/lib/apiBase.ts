@@ -1,5 +1,3 @@
-const DEFAULT_RENDER_API_BASE = "https://stock-matcher-pro-main.onrender.com";
-
 const normalizeBaseUrl = (value: string) => value.replace(/\/+$/, "");
 
 const resolveApiBaseUrl = () => {
@@ -8,7 +6,8 @@ const resolveApiBaseUrl = () => {
     return normalizeBaseUrl(envBaseUrl);
   }
 
-  return DEFAULT_RENDER_API_BASE;
+  // Keep relative API paths as a safe fallback for local proxy/electron.
+  return "";
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
