@@ -1,0 +1,67 @@
+name: Desktop Release Artifacts
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            build_cmd: npx electron-builder --win nsis --publish never
+            files: |
+              frontend/release/*.exe
+              frontend/release/*.exe.blockmap
+          - os: macos-latest
+            platform: macos
+            build_cmd: npx electron-builder --mac dmg --publish never
+            files: |
+              frontend/release/*.dmg
+          - os: ubuntu-latest
+            platform: linux
+            build_cmd: npx electron-builder --linux AppImage --publish never
+            files: |
+              frontend/release/*.AppImage
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build desktop installer
+        run: ${{ matrix.build_cmd }}
+        working-directory: frontend
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Upload artifacts to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.files }}
