@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
 import { TabType } from '@/types/inventory';
-import { Package, Layers, Upload, BarChart3 } from 'lucide-react';
-import { useMemo } from 'react';
+import { Package, Layers, Upload, BarChart3, Menu } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
   { key: 'stock', label: 'Stock', icon: <Package size={18} /> },
@@ -16,6 +17,7 @@ const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
 
 export default function AppHeader({ activeTab, onTabChange }: { activeTab: TabType; onTabChange: (t: TabType) => void }) {
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const authUser = useMemo(() => {
     try {
@@ -42,20 +44,27 @@ export default function AppHeader({ activeTab, onTabChange }: { activeTab: TabTy
     navigate('/login');
   };
 
+  const handleTabSelect = (tab: TabType) => {
+    onTabChange(tab);
+    setMobileMenuOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-50 glass-card border-b">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
             <Package size={18} className="text-primary-foreground" />
           </div>
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">StoreManager</h1>
-            <p className="text-xs text-muted-foreground">New Age Inventory Management & Stock Matching System</p>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-semibold tracking-tight text-foreground truncate">StoreManager</h1>
+            <p className="text-[11px] sm:text-xs text-muted-foreground hidden sm:block">
+              New Age Inventory Management & Stock Matching System
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <nav className="flex items-center gap-1 bg-secondary rounded-xl p-1">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <nav className="hidden md:flex items-center gap-1 bg-secondary rounded-xl p-1">
             {tabs.map(tab => (
               <button
                 key={tab.key}
@@ -80,7 +89,7 @@ export default function AppHeader({ activeTab, onTabChange }: { activeTab: TabTy
           </nav>
           <HoverCard openDelay={120} closeDelay={80}>
             <HoverCardTrigger asChild>
-              <button className="flex items-center rounded-xl border bg-card p-2 text-left hover:bg-accent transition-colors">
+              <button className="hidden md:flex items-center rounded-xl border bg-card p-2 text-left hover:bg-accent transition-colors">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
                 </Avatar>
@@ -97,6 +106,55 @@ export default function AppHeader({ activeTab, onTabChange }: { activeTab: TabTy
               </div>
             </HoverCardContent>
           </HoverCard>
+
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-card hover:bg-accent transition-colors"
+                aria-label="Open menu"
+              >
+                <Menu size={18} />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[85vw] max-w-sm px-4">
+              <SheetHeader className="pr-8">
+                <SheetTitle className="text-base">Menu</SheetTitle>
+                <SheetDescription className="text-xs sm:text-sm">
+                  Switch sections and manage your account.
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="mt-5 space-y-2">
+                {tabs.map((tab) => (
+                  <Button
+                    key={tab.key}
+                    type="button"
+                    variant={activeTab === tab.key ? "default" : "outline"}
+                    className="w-full justify-start text-sm"
+                    onClick={() => handleTabSelect(tab.key)}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </span>
+                  </Button>
+                ))}
+              </div>
+
+              <div className="mt-6 rounded-xl border bg-card p-3 space-y-1">
+                <p className="text-sm font-semibold break-words">{displayName}</p>
+                <p className="text-xs text-muted-foreground break-all">{displayEmail}</p>
+                <p className="text-xs text-muted-foreground capitalize">Role: {authRole}</p>
+              </div>
+
+              <SheetClose asChild>
+                <Button type="button" variant="destructive" className="mt-4 w-full" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </SheetClose>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>

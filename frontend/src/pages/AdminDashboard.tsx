@@ -127,30 +127,30 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background px-6 py-8">
+    <div className="min-h-screen bg-background px-4 sm:px-6 py-6 sm:py-8">
       <div className="pointer-events-none fixed inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent" />
       <div className="mx-auto max-w-7xl space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-3"
+          className="glass-card rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3"
         >
           <div>
-            <h1 className="text-2xl font-semibold flex items-center gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
+            <h1 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
+              <span className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
                 <Shield size={18} />
               </span>
               Admin Dashboard
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Manage user access and payment states from one place.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="rounded-lg bg-secondary/60 px-3 py-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="rounded-lg bg-secondary/60 px-3 py-2 text-xs sm:text-sm text-muted-foreground truncate flex-1 sm:flex-none">
               {authUser?.email || "Admin"}
             </span>
-            <Button type="button" variant="destructive" onClick={handleLogout}>
+            <Button type="button" variant="destructive" className="shrink-0" onClick={handleLogout}>
               Logout
             </Button>
           </div>
@@ -186,85 +186,149 @@ const AdminDashboard = () => {
                 {usersQuery.error instanceof Error ? usersQuery.error.message : "Unable to load users."}
               </p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-secondary/40">
-                    <TableHead>Email</TableHead>
-                    <TableHead>Created Date</TableHead>
-                    <TableHead>Last Login</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Payment Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                <div className="space-y-3 md:hidden">
                   {users.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
-                        No users found.
-                      </TableCell>
-                    </TableRow>
+                    <p className="text-sm text-center text-muted-foreground">No users found.</p>
                   ) : (
                     users.map((user) => (
-                      <TableRow key={user.id} className="hover:bg-secondary/30">
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{formatDate(user.createdAt)}</TableCell>
-                        <TableCell>{formatDate(user.lastLogin)}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.status === "active" ? "secondary" : "destructive"}>
-                            {user.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
+                      <div key={user.id} className="rounded-xl border border-border/60 bg-background/50 p-3 space-y-3">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium break-all">{user.email}</p>
+                          <p className="text-xs text-muted-foreground">Created: {formatDate(user.createdAt)}</p>
+                          <p className="text-xs text-muted-foreground">Last Login: {formatDate(user.lastLogin)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={user.status === "active" ? "secondary" : "destructive"}>{user.status}</Badge>
                           <Badge variant={user.paymentStatus === "paid" ? "default" : "outline"}>
                             {user.paymentStatus}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap justify-end gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={updateStatusMutation.isPending}
-                              onClick={() => setStatus(user, "active")}
-                            >
-                              Set Active
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={updateStatusMutation.isPending}
-                              onClick={() => setStatus(user, "paused")}
-                            >
-                              Set Paused
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={updatePaymentMutation.isPending}
-                              onClick={() => setPaymentStatus(user, "paid")}
-                            >
-                              Mark Paid
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={updatePaymentMutation.isPending}
-                              onClick={() => setPaymentStatus(user, "unpaid")}
-                            >
-                              Mark Unpaid
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={updateStatusMutation.isPending}
+                            onClick={() => setStatus(user, "active")}
+                          >
+                            Set Active
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={updateStatusMutation.isPending}
+                            onClick={() => setStatus(user, "paused")}
+                          >
+                            Set Paused
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={updatePaymentMutation.isPending}
+                            onClick={() => setPaymentStatus(user, "paid")}
+                          >
+                            Mark Paid
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={updatePaymentMutation.isPending}
+                            onClick={() => setPaymentStatus(user, "unpaid")}
+                          >
+                            Mark Unpaid
+                          </Button>
+                        </div>
+                      </div>
                     ))
                   )}
-                </TableBody>
-              </Table>
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-secondary/40">
+                        <TableHead>Email</TableHead>
+                        <TableHead>Created Date</TableHead>
+                        <TableHead>Last Login</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Payment Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground">
+                            No users found.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        users.map((user) => (
+                          <TableRow key={user.id} className="hover:bg-secondary/30">
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>{formatDate(user.createdAt)}</TableCell>
+                            <TableCell>{formatDate(user.lastLogin)}</TableCell>
+                            <TableCell>
+                              <Badge variant={user.status === "active" ? "secondary" : "destructive"}>
+                                {user.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={user.paymentStatus === "paid" ? "default" : "outline"}>
+                                {user.paymentStatus}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={updateStatusMutation.isPending}
+                                  onClick={() => setStatus(user, "active")}
+                                >
+                                  Set Active
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={updateStatusMutation.isPending}
+                                  onClick={() => setStatus(user, "paused")}
+                                >
+                                  Set Paused
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={updatePaymentMutation.isPending}
+                                  onClick={() => setPaymentStatus(user, "paid")}
+                                >
+                                  Mark Paid
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={updatePaymentMutation.isPending}
+                                  onClick={() => setPaymentStatus(user, "unpaid")}
+                                >
+                                  Mark Unpaid
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
